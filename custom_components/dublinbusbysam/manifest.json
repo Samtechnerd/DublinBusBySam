@@ -1,7 +1,7 @@
 {
   "domain": "dublinbusbysam",
   "name": "Dublin bus By Sam",
-  "codeowners":[@Samtechnerd],
+  "codeowners": ["@Samtechnerd"],
   "documentation": "https://github.com/Samtechnerd/DublinBusBySam",
   "iot_class": "cloud_polling",
   "quality_scale": "legacy"
