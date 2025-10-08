@@ -4,7 +4,7 @@ from homeassistant.helpers.entity import Entity
 from google.transit import gtfs_realtime_pb2
 
 API_URL = "https://api.nationaltransport.ie/gtfsr/v2/gtfsr/tripUpdates"
-API_KEY = "YOUR_API_KEY_HERE"  # replace with your National Transport API key
+API_KEY = "b9d5cee3e4ae44709ede9c6fe7d17f06"  # replace with your National Transport API key
 
 def setup_platform(hass, config, add_entities, discovery_info=None):
     """Set up the Dublin Bus sensor."""
