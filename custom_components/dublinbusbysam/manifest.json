@@ -1,9 +1,9 @@
 {
   "domain": "dublinbusbysam",
   "name": "Dublin Bus by Sam",
-  "version": "1.0.0",
+  "version": "1.2",
   "documentation": "https://github.com/Samtechnerd/DublinBusBySam",
-  "requirements": ["gtfs-realtime-bindings", "requests"],
+  "requirements": ["gtfs-realtime-bindings==0.0.8", "requests"],
   "dependencies": [],
   "codeowners": ["@Samtechnerd"],
   "iot_class": "cloud_polling",
