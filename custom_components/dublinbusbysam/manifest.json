@@ -1,8 +1,14 @@
 {
   "domain": "dublinbusbysam",
-  "name": "Dublin bus By Sam",
-  "codeowners": ["@Samtechnerd"],
+  "name": "Dublin Bus by Sam",
+  "version": "1.0.0",
   "documentation": "https://github.com/Samtechnerd/DublinBusBySam",
+  "requirements": ["gtfs-realtime-bindings==0.0.8", "requests"],
+  "dependencies": [],
+  "codeowners": ["@Samtechnerd"],
   "iot_class": "cloud_polling",
-  "quality_scale": "legacy"
+  "quality_scale": "stable",
+  "homeassistant": {
+    "logo": "https://raw.githubusercontent.com/Samtechnerd/DublinBusBySam/main/www/logo.png"
+  }
 }
