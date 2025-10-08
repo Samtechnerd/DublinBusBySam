@@ -2,7 +2,7 @@
   "domain": "dublinbusbysam",
   "name": "Dublin Bus by Sam",
   "version": "1.0",
-  "documentation": "https://github.com/Samtechnerd/dublinbusbysam",
+  "documentation": "https://github.com/Samtechnerd/DublinBusBySam",
   "requirements": [
     "gtfs-realtime-bindings==0.0.8",
     "requests"
