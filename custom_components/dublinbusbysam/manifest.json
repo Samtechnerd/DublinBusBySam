@@ -1,14 +1,11 @@
 {
   "domain": "dublinbusbysam",
   "name": "Dublin Bus by Sam",
-  "version": "1.2.0",
-  "documentation": "https://github.com/Samtechnerd/DublinBusBySam",
-  "requirements": ["gtfs-realtime-bindings==0.0.8", "requests"],
-  "dependencies": [],
   "codeowners": ["@Samtechnerd"],
+  "config_flow": true,
+  "documentation": "https://github.com/Samtechnerd/DublinBusBySam",
   "iot_class": "cloud_polling",
-  "quality_scale": "stable",
-  "homeassistant": {
-    "logo": "https://raw.githubusercontent.com/Samtechnerd/DublinBusBySam/main/www/logo.png"
-  }
+  "issue_tracker": "https://github.com/Samtechnerd/DublinBusBySam/issues",
+  "requirements": [],
+  "version": "1.0.0"
 }
