@@ -1,112 +1,79 @@
+"""Sensor platform for Dublin Bus by Sam."""
 from __future__ import annotations
-from contextlib import suppress
-from datetime import datetime, timedelta
-from typing import Any
-
-import requests
-from google.transit import gtfs_realtime_pb2
+from datetime import timedelta
 
 from homeassistant.components.sensor import SensorEntity
-from homeassistant.const import UnitOfTime
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.util import dt as dt_util
 
-ATTR_STOP_ID = "Stop ID"
-ATTR_ROUTE = "Route"
-ATTR_DUE_IN = "Due in"
-ATTR_DUE_AT = "Due at"
-ATTR_NEXT_UP = "Later Bus"
+from .const import DOMAIN, CONF_STOP_ID
 
-SCAN_INTERVAL = timedelta(minutes=1)
-TIME_STR_FORMAT = "%H:%M"
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
+    """Set up the sensor platform."""
+    coordinator = hass.data[DOMAIN][entry.entry_id]
+    stop_id = entry.data[CONF_STOP_ID]
+    
+    async_add_entities([DublinBusSensor(coordinator, stop_id)])
 
-_RESOURCE = "https://api.nationaltransport.ie/gtfsr/v2/gtfsr/tripUpdates"
-API_KEY = "b9d5cee3e4ae44709ede9c6fe7d17f06"
+class DublinBusSensor(CoordinatorEntity, SensorEntity):
+    """Representation of a Dublin Bus Sensor."""
 
-
-def due_in_minutes(timestamp):
-    """Return minutes until timestamp."""
-    diff = datetime.fromtimestamp(timestamp) - datetime.now()
-    return str(int(diff.total_seconds() / 60))
-
-
-def setup_platform(hass: HomeAssistant, config, add_entities, discovery_info=None):
-    """Set up the Dublin Bus sensor."""
-    stop = config.get("stopid")
-    name = config.get("name", "Next Bus")
-    add_entities([DublinBusSensor(stop, name)], True)
-
-
-class DublinBusSensor(SensorEntity):
-    """Implementation of a Dublin Bus sensor using GTFS-Realtime."""
-
-    _attr_attribution = "Data provided by NTA GTFS-Realtime"
-    _attr_icon = "mdi:bus"
-
-    def __init__(self, stop, name):
-        self._stop = stop
-        self._name = name
-        self._state = None
-        self._times = []
-
-    @property
-    def name(self):
-        return self._name
+    def __init__(self, coordinator, stop_id):
+        """Initialize the sensor."""
+        super().__init__(coordinator)
+        self._stop_id = stop_id
+        self._attr_name = f"Dublin Bus {stop_id}"
+        self._attr_unique_id = f"dublin_bus_{stop_id}"
+        self._attr_icon = "mdi:bus-clock"
+        self._attr_unit_of_measurement = "min"
 
     @property
     def native_value(self):
-        return self._state
+        """Return minutes until next bus."""
+        trips = self.coordinator.data.get("upcomingTrips", [])
+        if not trips:
+            return None 
+
+        return self._calculate_minutes(trips[0].get("departureTimestamp"))
 
     @property
-    def extra_state_attributes(self) -> dict[str, Any] | None:
-        if self._times:
-            next_up = "None"
-            if len(self._times) > 1:
-                next_up = f"{self._times[1][ATTR_ROUTE]} in {self._times[1][ATTR_DUE_IN]}"
+    def extra_state_attributes(self):
+        """Return full schedule attributes."""
+        trips = self.coordinator.data.get("upcomingTrips", [])
+        attrs = {
+            "stop_id": self._stop_id,
+            "buses": [] 
+        }
 
-            return {
-                ATTR_DUE_IN: self._times[0][ATTR_DUE_IN],
-                ATTR_DUE_AT: self._times[0][ATTR_DUE_AT],
-                ATTR_STOP_ID: self._stop,
-                ATTR_ROUTE: self._times[0][ATTR_ROUTE],
-                ATTR_NEXT_UP: next_up,
-            }
-        return None
+        if trips:
+            next_bus = trips[0]
+            attrs["next_route"] = next_bus.get("routeShortName")
+            attrs["next_destination"] = next_bus.get("tripHeadsign")
+            attrs["next_time"] = next_bus.get("departureTime")[:5]
 
-    @property
-    def native_unit_of_measurement(self):
-        return UnitOfTime.MINUTES
+            for trip in trips:
+                attrs["buses"].append({
+                    "route": trip.get("routeShortName"),
+                    "destination": trip.get("tripHeadsign"),
+                    "time": trip.get("departureTime")[:5],
+                    "minutes": self._calculate_minutes(trip.get("departureTimestamp"))
+                })
 
-    def update(self):
-        self._times = []
-        try:
-            headers = {"x-api-key": API_KEY}
-            response = requests.get(_RESOURCE, headers=headers)
-            response.raise_for_status()
+        return attrs
 
-            feed = gtfs_realtime_pb2.FeedMessage()
-            feed.ParseFromString(response.content)
-
-            arrivals = []
-            for entity in feed.entity:
-                if entity.HasField("trip_update"):
-                    for stop_time_update in entity.trip_update.stop_time_update:
-                        if stop_time_update.stop_id == self._stop:
-                            arrival_time = stop_time_update.arrival.time
-                            dt = datetime.fromtimestamp(arrival_time)
-                            arrivals.append({
-                                ATTR_DUE_AT: dt.strftime(TIME_STR_FORMAT),
-                                ATTR_ROUTE: entity.trip_update.trip.route_id,
-                                ATTR_DUE_IN: due_in_minutes(arrival_time)
-                            })
-
-            arrivals.sort(key=lambda x: x[ATTR_DUE_IN])
-            self._times = arrivals[:2]  # keep next 2 buses
-            if self._times:
-                self._state = self._times[0][ATTR_DUE_IN]
-            else:
-                self._state = "No buses"
-
-        except Exception as e:
-            self._state = "Error"
-            self._times = [{ATTR_ROUTE: "N/A", ATTR_DUE_AT: "N/A", ATTR_DUE_IN: "N/A"}]
-
+    def _calculate_minutes(self, departure_timestamp):
+        """Calculate minutes between now and timestamp."""
+        if departure_timestamp is None:
+            return 0
+        now = dt_util.now()
+        midnight = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        current_seconds = (now - midnight).total_seconds()
+        diff = departure_timestamp - current_seconds
+        return max(0, int(diff / 60))
