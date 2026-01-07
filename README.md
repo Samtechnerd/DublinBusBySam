@@ -32,5 +32,13 @@ A custom Home Assistant integration to track real-time bus departures.
 5.  Paste that ID into the setup box and you're all set!
 <img width="769" height="693" alt="image" src="https://github.com/user-attachments/assets/58b76d3e-d28e-491e-b341-b5cab92fec41" />
 
+## Repository
+https://github.com/Samtechnerd/DublinBusBySam
+
+## Latest Release
+https://github.com/Samtechnerd/DublinBusBySam/releases/tag/v2.0.0
+
+## CI/Actions
+https://github.com/Samtechnerd/DublinBusBySam/actions
 ---
 *Data provided by https://busfinder.fly.dev/. and National transport authority*
