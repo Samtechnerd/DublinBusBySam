@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import voluptuous as vol
 from homeassistant import config_entries
-from .const import DOMAIN, CONF_STOP_ID
+from .const import DOMAIN, CONF_STOP_ID, CONF_FILTER_ROUTES
 
 class DublinBusBySamConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Dublin Bus by Sam."""
@@ -21,7 +21,9 @@ class DublinBusBySamConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             )
 
         data_schema = vol.Schema({
-            vol.Required(CONF_STOP_ID, default="8240DB003721"): str,
+            vol.Required(CONF_STOP_ID, default="Stop-ID-here"): str,
+            # New optional field for comma-separated routes
+            vol.Optional(CONF_FILTER_ROUTES): str,
         })
 
         return self.async_show_form(
